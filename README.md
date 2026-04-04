@@ -16,6 +16,7 @@ This tool helps maximize your Claude Code session duration by opening sessions a
 ### The "Session Hack" Explained
 
 ![Hacking Time Illustration](file:///Users/mahmoud.maghrabia/.gemini/antigravity/brain/4caf6a88-8f79-4afb-a4ff-4f4b38b32272/session_planner_hack_illustration_1775342703939.png)
+**"No more: Limit will reset at XX:YY pm. Start early, work anytime!"**
 
 ```mermaid
 graph TD
