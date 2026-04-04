@@ -3,21 +3,21 @@
 [![CI](https://github.com/MahmoudMabrok/SessionPlanner/actions/workflows/ci.yml/badge.svg)](https://github.com/MahmoudMabrok/SessionPlanner/actions)
 [![npm](https://img.shields.io/npm/v/session-planner)](https://www.npmjs.com/package/session-planner)
 
+This tool helps maximize your Claude Code session duration by opening sessions ahead of time. Starting a session earlier ensures that if you hit a usage limit, the next reset time is already much closer (or has already passed), effectively eliminating idle waiting time.
+
+
+# How it works 
+
 > Schedule "Hello!" Claude Code sessions at times you choose — opening Claude **N hours before** each target time. Works as a terminal CLI, an `npx` one-liner, or a Claude Code plugin.
 >
 > 📦 **Available on npm:** [session-planner](https://www.npmjs.com/package/session-planner)
 
----
 
-## 💡 Motivation
 
-This tool helps maximize your Claude Code session duration by opening sessions ahead of time. Starting a session earlier ensures that if you hit a usage limit, the next reset time is already much closer (or has already passed), effectively eliminating idle waiting time.
+## The "Session Hack" Explained
+![session_planner_hack_infographic_1775344203921](https://github.com/user-attachments/assets/55c788ed-e35d-4f23-85f6-9ddb79df940c)
+![session_planner_hack_final_illustration_1775343574461](https://github.com/user-attachments/assets/b31971d5-eae6-49bf-8cbb-d938494045c6)
 
-### The "Session Hack" Explained
-
-![Hacking Time Illustration](file:///Users/mahmoud.maghrabia/.gemini/antigravity/brain/4caf6a88-8f79-4afb-a4ff-4f4b38b32272/session_planner_hack_final_illustration_1775343574461.png)
-
-![Session Planner Hack Infographic](file:///Users/mahmoud.maghrabia/.gemini/antigravity/brain/4caf6a88-8f79-4afb-a4ff-4f4b38b32272/session_planner_hack_infographic_1775344203921.png)
 
 ---
 
