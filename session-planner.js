@@ -41,6 +41,9 @@ function findScript() {
     path.join(__dirname, 'hello-scheduler.sh'),
     path.join(os.homedir(), '.claude', 'plugins', 'session-planner', 'scripts', 'hello-scheduler.sh'),
   ];
+  // console.debug('Checking candidates:', candidates);
+  // console.debug('__dirname:', __dirname);
+  // console.debug('Directory contents:', fs.readdirSync(__dirname));
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;
   }
