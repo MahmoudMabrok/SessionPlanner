@@ -125,14 +125,11 @@ Logs: `~/.claude/session-planner.log`
 
 ```
 SessionPlanner/
-├── .claude-plugin/plugin.json     ← Claude Code plugin manifest
-├── bin/session-planner.js         ← npx / global CLI entry
-├── commands/{hello,hello-list,hello-remove}.md
-├── skills/hello-scheduler/SKILL.md
-├── scripts/hello-scheduler.sh     ← core scheduling logic
-├── tests/test-parse.sh            ← 18 unit tests
+├── hello-scheduler.sh             ← core scheduling logic
+├── session-planner.js             ← npx / global CLI entry
+├── {hello,hello-list,hello-remove}.md  ← command definitions
 ├── package.json
-└── .github/workflows/ci.yml
+└── README.md
 ```
 
 ---

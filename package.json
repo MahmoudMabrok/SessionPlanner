@@ -1,6 +1,6 @@
 {
   "name": "session-planner",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Schedule Hello! Claude Code sessions at specific times. Opens a session N hours before your chosen time.",
   "keywords": [
     "claude",
@@ -29,11 +29,11 @@
     "test": "bash tests/test-parse.sh"
   },
   "files": [
-    "bin/",
-    "scripts/",
-    "commands/",
-    "skills/",
-    ".claude-plugin/",
+    "hello-scheduler.sh",
+    "session-planner.js",
+    "hello.md",
+    "hello-list.md",
+    "hello-remove.md",
     "README.md",
     "LICENSE"
   ]
