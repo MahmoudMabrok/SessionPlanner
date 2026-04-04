@@ -46,6 +46,7 @@ const c = {
 //   2. Installed as a Claude Code plugin  ~/.claude/plugins/session-planner/scripts/
 function findScript() {
   const candidates = [
+    path.join(__dirname, 'scripts', 'hello-scheduler.sh'),
     path.join(__dirname, 'hello-scheduler.sh'),
     path.join(os.homedir(), '.claude', 'plugins', 'session-planner', 'scripts', 'hello-scheduler.sh'),
   ];

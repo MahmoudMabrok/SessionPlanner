@@ -10,7 +10,7 @@ The user wants to schedule hello sessions. Their arguments are: $ARGUMENTS
 
 Execute the scheduler script:
 
-!`bash ~/.claude/scripts/hello-scheduler.sh $ARGUMENTS`
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/hello-scheduler.sh $ARGUMENTS`
 
 ## Step 2 — Parse the output and report
 
@@ -52,4 +52,4 @@ Tell the user:
 2. The offset used (e.g. "4 hours before each target time")
 3. That persistent cron jobs have been registered (survive terminal close)
 4. That the `/loop` in-session reminder was set for the soonest session
-5. How to list or remove jobs: `crontab -l` / `~/.claude/scripts/hello-scheduler.sh --list` / `--remove-all`
+5. How to list or remove jobs: `crontab -l` / `${CLAUDE_PLUGIN_ROOT}/scripts/hello-scheduler.sh --list` / `--remove-all`

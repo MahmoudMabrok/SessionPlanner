@@ -7,9 +7,9 @@ allowed-tools: Bash
 The user wants to remove a scheduled hello session. Their argument is: $ARGUMENTS
 
 If the argument is "--all" or "all":
-!`bash ~/.claude/scripts/hello-scheduler.sh --remove-all`
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/hello-scheduler.sh --remove-all`
 
 Otherwise treat $ARGUMENTS as a time and run:
-!`bash ~/.claude/scripts/hello-scheduler.sh --remove $ARGUMENTS`
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/hello-scheduler.sh --remove $ARGUMENTS`
 
 Confirm to the user what was removed.

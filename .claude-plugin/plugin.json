@@ -1,0 +1,10 @@
+{
+  "name": "session-planner",
+  "version": "1.1.1",
+  "description": "Schedule Hello! Claude Code sessions to maximize session duration.",
+  "commands": [
+    "./commands/hello.md",
+    "./commands/hello-list.md",
+    "./commands/hello-remove.md"
+  ]
+}

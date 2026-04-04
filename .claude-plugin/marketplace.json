@@ -1,0 +1,11 @@
+{
+  "name": "MahmoudMabrok Marketplace",
+  "description": "Custom Claude Code plugins by MahmoudMabrok",
+  "plugins": [
+    {
+      "name": "session-planner",
+      "description": "Schedule Hello! Claude Code sessions",
+      "source": "."
+    }
+  ]
+}

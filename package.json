@@ -33,12 +33,12 @@
     "test": "bash tests/test-parse.sh"
   },
   "files": [
-    "hello-scheduler.sh",
+    "scripts/hello-scheduler.sh",
+    "commands/",
+    ".claude-plugin/",
     "session-planner.js",
-    "hello.md",
-    "hello-list.md",
-    "hello-remove.md",
     "README.md",
     "LICENSE"
   ]
+
 }

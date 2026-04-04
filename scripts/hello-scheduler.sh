@@ -158,8 +158,8 @@ done
 
 if $LIST_MODE; then
   echo -e "${BOLD}Scheduled Hello jobs:${RESET}"
-  if (crontab -l 2>/dev/null || true) | grep -q "# session-planner"; then
-    (crontab -l 2>/dev/null || true) | grep "# session-planner"
+  if (((crontab -l 2>/dev/null || true) || true) || true) | grep -q "# session-planner"; then
+    (((crontab -l 2>/dev/null || true) || true) || true) | grep "# session-planner"
   else
     echo -e "  ${YELLOW}No session-planner jobs found.${RESET}"
   fi
@@ -170,7 +170,7 @@ fi
 
 if $REMOVE_ALL; then
   tmp=$(mktemp)
-  crontab -l 2>/dev/null \
+  ((crontab -l 2>/dev/null || true) || true) \
     | grep -v "# session-planner" \
     | grep -v "session-planner" \
     > "$tmp" || true
@@ -185,7 +185,7 @@ if [[ -n "$REMOVE_TIME" ]]; then
   parse_time "$REMOVE_TIME"
   TARGET_PRETTY=$(pretty_time "$PARSED_HOUR" "$PARSED_MIN")
   tmp=$(mktemp)
-  crontab -l 2>/dev/null \
+  ((crontab -l 2>/dev/null || true) || true) \
     | grep -v "# session-planner.*${TARGET_PRETTY}" \
     | grep -v "Hello! It is now ${TARGET_PRETTY}" \
     > "$tmp" || true
@@ -206,7 +206,7 @@ LOG="$HOME/.claude/session-planner.log"
 # ── load crontab, strip existing session-planner entries ─────────────────────
 
 tmp=$(mktemp)
-crontab -l 2>/dev/null \
+((crontab -l 2>/dev/null || true) || true) \
   | grep -v "# session-planner" \
   | grep -v "session-planner" \
   > "$tmp" || true
