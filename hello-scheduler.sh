@@ -158,8 +158,8 @@ done
 
 if $LIST_MODE; then
   echo -e "${BOLD}Scheduled Hello jobs:${RESET}"
-  if crontab -l 2>/dev/null | grep -q "# session-planner"; then
-    crontab -l 2>/dev/null | grep "# session-planner"
+  if (crontab -l 2>/dev/null || true) | grep -q "# session-planner"; then
+    (crontab -l 2>/dev/null || true) | grep "# session-planner"
   else
     echo -e "  ${YELLOW}No session-planner jobs found.${RESET}"
   fi

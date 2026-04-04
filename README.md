@@ -116,6 +116,8 @@ scripts/hello-scheduler.sh   (bash)
 | **Claude Code** | `claude` in PATH — [install](https://code.claude.com) |
 | **cron** | Built-in on macOS; Linux: `sudo apt install cron` |
 | **Bash** 4+ | macOS: `brew install bash` |
+| **OS Support** | macOS and Linux (terminal use) |
+
 
 Logs: `~/.claude/session-planner.log`
 

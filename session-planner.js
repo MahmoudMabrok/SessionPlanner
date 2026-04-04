@@ -21,6 +21,14 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+// ── OS Compatibility Check ───────────────────────────────────────────────────
+if (process.platform === 'win32') {
+  console.error('\x1b[31mERROR:\x1b[0m session-planner currently only supports macOS and Linux.');
+  console.error('This tool relies on bash and cron, which are not natively available on Windows.');
+  process.exit(1);
+}
+
+
 // ── colours ───────────────────────────────────────────────────────────────────
 const isTTY = process.stdout.isTTY;
 const c = {
