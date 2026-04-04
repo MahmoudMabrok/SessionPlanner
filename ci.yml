@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+      - name: Lint scripts
+        run: shellcheck scripts/hello-scheduler.sh install.sh
+
+  test:
+    name: Parse Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run parse unit tests
+        run: bash tests/test-parse.sh
+
+  test-macos:
+    name: Parse Tests (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bash 5 (macOS ships Bash 3)
+        run: brew install bash
+      - name: Run parse unit tests
+        run: /usr/local/bin/bash tests/test-parse.sh
