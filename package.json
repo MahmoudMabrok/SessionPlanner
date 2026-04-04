@@ -1,8 +1,14 @@
 {
   "name": "session-planner",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Schedule Hello! Claude Code sessions at specific times. Opens a session N hours before your chosen time.",
-  "keywords": ["claude", "claude-code", "scheduler", "cli", "cron"],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "scheduler",
+    "cli",
+    "cron"
+  ],
   "author": "MahmoudMabrok",
   "license": "MIT",
   "homepage": "https://github.com/MahmoudMabrok/SessionPlanner",
