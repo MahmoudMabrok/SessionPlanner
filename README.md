@@ -1,6 +1,6 @@
 # 🕐 hello-scheduler
 
-[![CI](https://github.com/YOUR_USERNAME/hello-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/hello-scheduler/actions)
+[![CI](https://github.com/MahmoudMabrok/SessionPlanner/actions/workflows/ci.yml/badge.svg)](https://github.com/MahmoudMabrok/SessionPlanner/actions)
 
 > A Claude Code plugin that schedules "Hello!" sessions at times you choose — opening Claude **N hours before** each target time, with both persistent cron scheduling and in-session `/loop` reminders.
 
@@ -25,13 +25,13 @@
 Inside any Claude Code session:
 
 ```
-/plugin add https://github.com/YOUR_USERNAME/hello-scheduler
+/plugin add https://github.com/MahmoudMabrok/SessionPlanner
 ```
 
 ### Option B — One-line shell install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/hello-scheduler.git
+git clone https://github.com/MahmoudMabrok/SessionPlanner.git
 cd hello-scheduler
 bash install.sh
 ```
