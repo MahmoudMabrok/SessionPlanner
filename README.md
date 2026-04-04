@@ -17,25 +17,7 @@ This tool helps maximize your Claude Code session duration by opening sessions a
 
 ![Hacking Time Illustration](file:///Users/mahmoud.maghrabia/.gemini/antigravity/brain/4caf6a88-8f79-4afb-a4ff-4f4b38b32272/session_planner_hack_final_illustration_1775343574461.png)
 
-```mermaid
-graph TD
-    subgraph Standard_Way [Standard Way]
-    A1[Start Work at 1 PM] --> B1{Hit Limit?}
-    B1 -- Yes --> C1["'Limit will reset at 9:00 PM'"]
-    C1 --> D1[Wait 8 Hours 😫]
-    end
-
-    subgraph The_Hack [The Hack]
-    A2[Auto-Open at 9 AM] --> B2[Start Work at 1 PM]
-    B2 --> C2{Hit Limit?}
-    C2 -- Yes --> D2["'Limit will reset... in 5 mins'"]
-    D2 --> E2[NO MORE WAITING 😎]
-    end
-
-    style A2 fill:#4CAF50,stroke:#2E7D32,color:#fff
-    style E2 fill:#2196F3,stroke:#1565C0,color:#fff
-    style D1 fill:#f44336,stroke:#c62828,color:#fff
-```
+![Session Planner Hack Infographic](file:///Users/mahmoud.maghrabia/.gemini/antigravity/brain/4caf6a88-8f79-4afb-a4ff-4f4b38b32272/session_planner_hack_infographic_1775344203921.png)
 
 ---
 
