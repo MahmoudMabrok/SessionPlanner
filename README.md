@@ -4,6 +4,8 @@
 [![npm](https://img.shields.io/npm/v/session-planner)](https://www.npmjs.com/package/session-planner)
 
 > Schedule "Hello!" Claude Code sessions at times you choose — opening Claude **N hours before** each target time. Works as a terminal CLI, an `npx` one-liner, or a Claude Code plugin.
+>
+> 📦 **Available on npm:** [session-planner](https://www.npmjs.com/package/session-planner)
 
 ---
 
