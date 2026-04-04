@@ -76,7 +76,7 @@ timestamp_for() {
 
 # Parse any supported time format → sets PARSED_HOUR, PARSED_MIN
 parse_time() {
-  local raw="${1,,}"
+  local raw=$(echo "$1" | tr '[:upper:]' '[:lower:]')
   PARSED_HOUR=""; PARSED_MIN=0
 
   # 24-hour  H:MM or HH:MM
