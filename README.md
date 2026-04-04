@@ -21,15 +21,15 @@ This tool helps maximize your Claude Code session duration by opening sessions a
 graph TD
     subgraph Standard_Way [Standard Way]
     A1[Start Work at 1 PM] --> B1{Hit Limit?}
-    B1 -- Yes --> C1[Wait 4-8 Hours]
-    C1 --> D1[Resume at 9 PM]
+    B1 -- Yes --> C1["'Limit will reset at 9:00 PM'"]
+    C1 --> D1[Wait 8 Hours 😫]
     end
 
     subgraph The_Hack [The Hack]
     A2[Auto-Open at 9 AM] --> B2[Start Work at 1 PM]
     B2 --> C2{Hit Limit?}
-    C2 -- Yes --> D2[Reset is NEAR]
-    D2 --> E2[Resume Immediately]
+    C2 -- Yes --> D2["'Limit will reset... in 5 mins'"]
+    D2 --> E2[NO MORE WAITING 😎]
     end
 
     style A2 fill:#4CAF50,stroke:#2E7D32,color:#fff
