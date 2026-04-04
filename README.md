@@ -1,217 +1,168 @@
-# 🕐 hello-scheduler
+# 🕐 SessionPlanner
 
 [![CI](https://github.com/MahmoudMabrok/SessionPlanner/actions/workflows/ci.yml/badge.svg)](https://github.com/MahmoudMabrok/SessionPlanner/actions)
+[![npm](https://img.shields.io/npm/v/session-planner)](https://www.npmjs.com/package/session-planner)
 
-> A Claude Code plugin that schedules "Hello!" sessions at times you choose — opening Claude **N hours before** each target time, with both persistent cron scheduling and in-session `/loop` reminders.
-
----
-
-## ✨ Features
-
-- **Multiple times** — `/hello 9am 2pm 6pm` schedules all three at once
-- **Configurable offset** — default 4h before, override with `--offset 2h`
-- **Dual scheduling** — persistent `cron` jobs (survive terminal close) + in-session `/loop` reminder for the soonest session
-- **Flexible time formats** — `1am`, `2:30pm`, `14:00`, `9:30am`
-- **Full job management** — `/hello-list`, `/hello-remove 2pm`, `/hello-remove --all`
-- **Skill + commands** — works as `/hello` slash command *and* auto-invoked by Claude from natural language
-- **Tested** — 18 unit tests, CI on Linux and macOS
+> Schedule "Hello!" Claude Code sessions at times you choose — opening Claude **N hours before** each target time. Works as a terminal CLI, an `npx` one-liner, or a Claude Code plugin.
 
 ---
 
-## 📦 Install
+## 💡 Motivation
 
-### Option A — Plugin marketplace (recommended, no cloning needed)
+This tool helps maximize your Claude Code session duration by opening sessions ahead of time. Starting a session earlier ensures that if you hit a usage limit, the next reset time is already much closer (or has already passed), effectively eliminating idle waiting time.
 
-Inside any Claude Code session:
+### The "Session Hack" Explained
 
+![Hacking Time Illustration](file:///Users/mahmoud.maghrabia/.gemini/antigravity/brain/4caf6a88-8f79-4afb-a4ff-4f4b38b32272/session_planner_hack_illustration_1775342703939.png)
+
+```mermaid
+graph TD
+    subgraph "Standard Way"
+    A1[Start Work at 1 PM] --> B1{Hit Limit?}
+    B1 -- Yes --> C1[Wait 4-8 Hours]
+    C1 --> D1[Resume at 9 PM 😫]
+    end
+
+    subgraph "The Hack (Session Planner)"
+    A2[Auto-Open at 9 AM] --> B2[Start Work at 1 PM]
+    B2 --> C2{Hit Limit?}
+    C2 -- Yes --> D2[Reset is NEAR]
+    D2 --> E2[Resume Immediately 😎]
+    end
+
+    style A2 fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style E2 fill:#2196F3,stroke:#1565C0,color:#fff
+    style D1 fill:#f44336,stroke:#c62828,color:#fff
 ```
-/plugin add https://github.com/MahmoudMabrok/SessionPlanner
-```
 
-### Option B — One-line shell install
+---
+
+## Quick start — terminal / npx (no install needed)
 
 ```bash
-git clone https://github.com/MahmoudMabrok/SessionPlanner.git
-cd hello-scheduler
-bash install.sh
+npx session-planner hello 1am
+npx session-planner hello 9am 2pm 6pm
+npx session-planner hello 14:00 --offset 2h
+npx session-planner list
+npx session-planner remove 2pm
+npx session-planner remove --all
+npx session-planner help
 ```
 
-### Option C — Manual
+---
+
+## Install globally (optional)
 
 ```bash
-# Script
-mkdir -p ~/.claude/scripts
-cp scripts/hello-scheduler.sh ~/.claude/scripts/
-chmod +x ~/.claude/scripts/hello-scheduler.sh
-
-# Commands
-mkdir -p ~/.claude/commands
-cp .claude/commands/hello.md ~/.claude/commands/hello.md
-cp .claude/commands/hello-list.md ~/.claude/commands/hello-list.md
-cp .claude/commands/hello-remove.md ~/.claude/commands/hello-remove.md
-
-# Skill (auto-invocation)
-mkdir -p ~/.claude/skills/hello-scheduler
-cp .claude/skills/hello-scheduler/SKILL.md ~/.claude/skills/hello-scheduler/SKILL.md
+npm install -g session-planner
+session-planner hello 1am
 ```
 
 ---
 
-## 🚀 Usage
+## Install as a Claude Code plugin
 
 ```
-/hello 1am
-/hello 9am 2pm 6pm
-/hello 14:00 --offset 2h
-/hello-list
-/hello-remove 2pm
-/hello-remove --all
+/plugin marketplace add MahmoudMabrok/SessionPlanner
+/plugin install session-planner@mahmoudmabrok-sessionplanner
+/reload-plugins
 ```
 
-### What happens
+Then inside Claude Code:
 
 ```
-User: /hello 1am
-
-  ┌─ hello-scheduler.sh parses "1am"
-  │   Target time:    1:00 am
-  │   Offset:         4 hours (default)
-  │   Session opens:  9:00 pm
-  │
-  ├─ Registers cron job (persistent):
-  │   0 21 * * *  claude --print "Hello! It is now 1:00 am..."
-  │
-  └─ Claude issues /loop for in-session countdown:
-      /loop <seconds until 9pm>  ⏰ Reminder: your session starts now!
-
-Claude confirms with a summary table.
+/session-planner:hello 1am
+/session-planner:hello 9am 2pm --offset 2h
+/session-planner:hello-list
+/session-planner:hello-remove 2pm
 ```
-
-### Time formats
-
-| Input      | Means      |
-|------------|------------|
-| `1am`      | 1:00 AM    |
-| `12am`     | Midnight   |
-| `12pm`     | Noon       |
-| `2:30pm`   | 2:30 PM    |
-| `14:30`    | 2:30 PM    |
-| `0:00`     | Midnight   |
-
-### Options
-
-| Flag               | Default | Description                                   |
-|--------------------|---------|-----------------------------------------------|
-| `--offset Nh`      | `4h`    | Open session N hours before the target time   |
-| `--list`           | —       | Show all scheduled hello jobs                 |
-| `--remove <time>`  | —       | Remove the job for a specific target time     |
-| `--remove-all`     | —       | Cancel all scheduled hello jobs               |
 
 ---
 
-## 🔧 How it works
+## How it works
 
 ```
-/hello 9am 2pm --offset 3h
+npx session-planner hello 1am
         │
         ▼
-hello-scheduler.sh
+bin/session-planner.js   (Node.js CLI)
         │
-        ├── Parse "9am"  → session opens at 6:00 am
-        ├── Parse "2pm"  → session opens at 11:00 am
+        ▼
+scripts/hello-scheduler.sh   (bash)
         │
-        ├── Register 2 cron jobs (survive terminal close)
-        │     0  6 * * *  claude --print "Hello! It is now 9:00 am..."
-        │     0 11 * * *  claude --print "Hello! It is now 2:00 pm..."
+        ├── Target:   1:00 am
+        ├── Offset:   4h (default)
+        ├── Session:  9:00 pm  ← cron fires claude here
         │
-        ├── Emit SCHEDULED JSON for each job
-        └── Emit SUMMARY JSON
-
-Claude reads output → builds reply → issues /loop for soonest session
+        └── 0 21 * * *  claude --print "Hello! It is now 1:00 am..."
 ```
 
-### Scheduling layers
-
-| Layer    | How                        | Survives terminal close? |
-|----------|----------------------------|--------------------------|
-| `cron`   | `claude --print` at session time | ✅ Yes              |
-| `/loop`  | In-session countdown reminder    | ❌ Session-bound    |
+| Layer | What | Persists after terminal close? |
+|---|---|---|
+| `cron` | `claude --print` at session time | ✅ Yes |
+| `/loop` | In-session reminder (Claude Code only) | ❌ Session-bound |
 
 ---
 
-## 📋 Managing jobs
+## Time formats
 
-```
-# Inside Claude Code
-/hello-list
-/hello-remove 2pm
-/hello-remove --all
-
-# From the terminal
-~/.claude/scripts/hello-scheduler.sh --list
-~/.claude/scripts/hello-scheduler.sh --remove 2pm
-~/.claude/scripts/hello-scheduler.sh --remove-all
-
-# View logs
-cat ~/.claude/hello-scheduler.log
-```
+| Input | Means |
+|---|---|
+| `1am` | 1:00 AM |
+| `12am` | Midnight |
+| `12pm` | Noon |
+| `2:30pm` | 2:30 PM |
+| `14:30` | 2:30 PM |
 
 ---
 
-## 🖥️ Requirements
+## Options
 
-| Requirement | Notes |
-|-------------|-------|
+| Flag | Default | Description |
+|---|---|---|
+| `--offset Nh` | `4h` | Open session N hours before target |
+
+---
+
+## Requirements
+
+| | Notes |
+|---|---|
+| **Node.js** ≥ 14 | For npx / global install |
 | **Claude Code** | `claude` in PATH — [install](https://code.claude.com) |
-| **cron** | Built-in on macOS. Linux: `sudo apt install cron` |
-| **Bash 4+** | macOS ships Bash 3 — `brew install bash` if needed |
+| **cron** | Built-in on macOS; Linux: `sudo apt install cron` |
+| **Bash** 4+ | macOS: `brew install bash` |
 
-### macOS note
-
-Your terminal app may need **Full Disk Access** (System Settings → Privacy & Security) for `claude` to run from cron. Alternatively, rely purely on the in-session `/loop` reminder with `--offset 0h`.
+Logs: `~/.claude/session-planner.log`
 
 ---
 
-## 📁 Structure
+## Repo structure
 
 ```
-hello-scheduler/
-├── install.sh
-├── plugin.json
-├── CHANGELOG.md
-├── README.md
-├── LICENSE
-├── scripts/
-│   └── hello-scheduler.sh        # Core: parse, offset, cron, JSON output
-├── tests/
-│   └── test-parse.sh             # 18 unit tests
-├── .github/
-│   └── workflows/
-│       └── ci.yml                # ShellCheck + tests on Linux & macOS
-└── .claude/
-    ├── commands/
-    │   ├── hello.md              # /hello  — schedule sessions
-    │   ├── hello-list.md         # /hello-list  — show all jobs
-    │   └── hello-remove.md       # /hello-remove  — cancel jobs
-    └── skills/
-        └── hello-scheduler/
-            └── SKILL.md          # Auto-invokable skill
+SessionPlanner/
+├── .claude-plugin/plugin.json     ← Claude Code plugin manifest
+├── bin/session-planner.js         ← npx / global CLI entry
+├── commands/{hello,hello-list,hello-remove}.md
+├── skills/hello-scheduler/SKILL.md
+├── scripts/hello-scheduler.sh     ← core scheduling logic
+├── tests/test-parse.sh            ← 18 unit tests
+├── package.json
+└── .github/workflows/ci.yml
 ```
 
 ---
 
-## 🤝 Contributing
+## Publish to npm
 
-PRs welcome! See [CHANGELOG](CHANGELOG.md) for history.
-
-Ideas:
-- Windows Task Scheduler support
-- Custom greeting messages per time slot
-- macOS `terminal-notifier` / `osascript` desktop notifications
-- Slack/email notification hooks
+```bash
+npm login
+npm publish
+# users then run: npx session-planner hello 1am
+```
 
 ---
 
-## 📄 License
+## License
 
 MIT
