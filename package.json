@@ -14,7 +14,7 @@
     "url": "https://github.com/MahmoudMabrok/SessionPlanner/issues"
   },
   "bin": {
-    "session-planner": "./bin/session-planner.js"
+    "session-planner": "./session-planner.js"
   },
   "engines": {
     "node": ">=14.0.0"
