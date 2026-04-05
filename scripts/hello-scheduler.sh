@@ -119,6 +119,16 @@ pretty_time() {
   printf "%d:%02d %s" $ph $m $suffix
 }
 
+send_notification() {
+  local msg="$1"
+  local title="Session Planner"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    osascript -e "display notification \"$msg\" with title \"$title\""
+  elif command -v notify-send >/dev/null; then
+    notify-send "$title" "$msg"
+  fi
+}
+
 # Seconds until next occurrence of HH:MM (today or tomorrow)
 seconds_until() {
   local th=$1 tm=$2
@@ -209,6 +219,9 @@ fi
 mkdir -p "$HOME/.claude"
 LOG="$HOME/.claude/session-planner.log"
 
+# ── find claude path for cron ──────────────────────────────────────────────────
+CLAUDE_PATH=$(which claude 2>/dev/null || echo "claude")
+
 # ── load crontab, strip existing session-planner entries ─────────────────────
 
 tmp=$(mktemp)
@@ -239,10 +252,11 @@ for T in "${TIMES[@]}"; do
   TARGET_PRETTY=$(pretty_time "$TARGET_H" "$TARGET_M")
   SCHED_PRETTY=$(pretty_time "$SCHED_H" "$SCHED_M")
 
-  # cron job: claude --print fires at session-open time
+  # cron job: claude --print fires at session-open time + notification
   MSG="Hello! It is now ${TARGET_PRETTY}. This is your scheduled greeting."
   CRON_EXPR="${SCHED_M} ${SCHED_H} * * *"
-  CRON_LINE="${CRON_EXPR} claude --print \"${MSG}\" >> ${LOG} 2>&1"
+  # We use a subshell for the notification to handle the environment/osascript better
+  CRON_LINE="${CRON_EXPR} ${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; if [ \"\$(uname)\" = \"Darwin\" ]; then osascript -e \"display notification \\\"${MSG}\\\" with title \\\"Session Planner\\\"\"; elif command -v notify-send >/dev/null; then notify-send \"Session Planner\" \"${MSG}\"; fi"
 
   {
     echo "# session-planner: session at ${SCHED_PRETTY} → greeting at ${TARGET_PRETTY} (offset: ${OFFSET_HOURS}h)"
@@ -257,6 +271,9 @@ for T in "${TIMES[@]}"; do
     SOONEST_TARGET="$TARGET_PRETTY"
     SOONEST_SESSION="$SCHED_PRETTY"
   fi
+
+  # Success message for user
+  echo -e "${GREEN}✓${RESET} Scheduled Claude session to start at ${BOLD}${SCHED_PRETTY}${RESET} (greeting at ${TARGET_PRETTY})"
 
   # Structured output for Claude to parse
   echo "SCHEDULED: {\"target\":\"${TARGET_PRETTY}\",\"session_at\":\"${SCHED_PRETTY}\",\"cron\":\"${CRON_EXPR}\",\"loop_in_seconds\":${LOOP_SECS},\"offset_hours\":${OFFSET_HOURS}}"
