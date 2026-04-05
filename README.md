@@ -118,6 +118,15 @@ scripts/hello-scheduler.sh   (bash)
 | **Bash** 4+ | macOS: `brew install bash` |
 | **OS Support** | macOS and Linux (terminal use) |
 
+---
+
+## 🔐 Permissions (macOS)
+
+To ensure `session-planner` can schedule jobs and show notifications without prompting every time, grant your terminal (Terminal or iTerm) the following:
+
+1. **Full Disk Access**: Go to `System Settings > Privacy & Security > Full Disk Access` and add your terminal. This is required for `crontab` to save your schedule.
+2. **Notifications**: Go to `System Settings > Notifications > Script Editor` and ensure "Allow Notifications" is on.
+
 
 Logs: `~/.claude/session-planner.log`
 
@@ -127,9 +136,11 @@ Logs: `~/.claude/session-planner.log`
 
 ```
 SessionPlanner/
-├── hello-scheduler.sh             ← core scheduling logic
+├── scripts/
+│   └── hello-scheduler.sh         ← core scheduling logic
+├── commands/
+│   └── hello.md                   ← command definition
 ├── session-planner.js             ← npx / global CLI entry
-├── {hello,hello-list,hello-remove}.md  ← command definitions
 ├── package.json
 └── README.md
 ```
