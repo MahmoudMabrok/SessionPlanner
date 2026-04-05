@@ -103,7 +103,9 @@ parse_time() {
     error "Unrecognised time format: '$1'. Try: 1am  2:30pm  14:00"
   fi
 
-  [[ $PARSED_HOUR -gt 23 ]] && error "Hour out of range 0-23 (got: $1)"
+  if [[ $PARSED_HOUR -gt 23 ]]; then
+    error "Hour out of range 0-23 (got: $1)"
+  fi
 }
 
 # 24h hour+min → pretty 12h string
@@ -130,7 +132,9 @@ seconds_until() {
 
 # ── argument parsing ──────────────────────────────────────────────────────────
 
-[[ $# -eq 0 ]] && usage
+if [[ $# -eq 0 ]]; then
+  usage
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -174,7 +178,7 @@ if $REMOVE_ALL; then
     | grep -v "# session-planner" \
     | grep -v "session-planner" \
     > "$tmp" || true
-  crontab "$tmp"; rm -f "$tmp"
+  cat "$tmp" | crontab -; rm -f "$tmp"
   echo -e "${GREEN}✓${RESET} All session-planner jobs removed."
   exit 0
 fi
@@ -189,14 +193,16 @@ if [[ -n "$REMOVE_TIME" ]]; then
     | grep -v "# session-planner.*${TARGET_PRETTY}" \
     | grep -v "Hello! It is now ${TARGET_PRETTY}" \
     > "$tmp" || true
-  crontab "$tmp"; rm -f "$tmp"
+  cat "$tmp" | crontab -; rm -f "$tmp"
   echo -e "${GREEN}✓${RESET} Removed session-planner job for ${BOLD}${TARGET_PRETTY}${RESET}."
   exit 0
 fi
 
 # ── validate at least one time was given ─────────────────────────────────────
 
-[[ ${#TIMES[@]} -eq 0 ]] && error "Please provide at least one time. E.g: hello-scheduler.sh 1am"
+if [[ ${#TIMES[@]} -eq 0 ]]; then
+  error "Please provide at least one time. E.g: hello-scheduler.sh 1am"
+fi
 
 # ── ensure log dir ────────────────────────────────────────────────────────────
 
@@ -263,7 +269,7 @@ done
 JOBS_JSON+="]"
 
 # Commit updated crontab
-crontab "$tmp"
+cat "$tmp" | crontab -
 rm -f "$tmp"
 
 # Summary for Claude's confirmation message
