@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/hello-scheduler.sh
-# Schedule "Hello!" Claude Code sessions at specific times.
-# Each session opens N hours before the chosen time (default: 4h).
+# Schedule Claude Code sessions to start at specific times.
+# Each session starts N hours before the chosen time (default: 4h).
 #
 # When installed as a plugin, this script lives at:
 #   ~/.claude/plugins/session-planner/scripts/hello-scheduler.sh
@@ -36,7 +36,7 @@ fi
 
 usage() {
   cat <<EOF
-${BOLD}hello-scheduler${RESET} — Schedule "Hello!" Claude Code sessions
+${BOLD}hello-scheduler${RESET} — Schedule Claude Code sessions to start
 
 ${BOLD}USAGE${RESET}
   hello-scheduler.sh <time> [time2 ...] [--offset Nh]
@@ -48,10 +48,10 @@ ${BOLD}TIME FORMATS${RESET}
   1am   2pm   12:00   9:30am   14:30
 
 ${BOLD}OPTIONS${RESET}
-  --offset Nh     Open session N hours before target time (default: 4)
-  --list          Show all scheduled hello jobs
-  --remove <time> Remove the job for a specific target time
-  --remove-all    Cancel all scheduled hello jobs
+  --offset Nh     Start session N hours before target time (default: 4)
+  --list          Show all scheduled Claude sessions
+  --remove <time> Remove the session for a specific target time
+  --remove-all    Cancel all scheduled Claude sessions
   --help          Show this help
 
 ${BOLD}EXAMPLES${RESET}
@@ -140,6 +140,15 @@ seconds_until() {
   echo $(( target_ts - now ))
 }
 
+# Format seconds as hh:mm:ss
+format_duration() {
+  local total_seconds=$1
+  local hours=$(( total_seconds / 3600 ))
+  local minutes=$(( (total_seconds % 3600) / 60 ))
+  local seconds=$(( total_seconds % 60 ))
+  printf "%02d:%02d:%02d" $hours $minutes $seconds
+}
+
 # ── argument parsing ──────────────────────────────────────────────────────────
 
 if [[ $# -eq 0 ]]; then
@@ -171,12 +180,61 @@ done
 # ── --list ────────────────────────────────────────────────────────────────────
 
 if $LIST_MODE; then
-  echo -e "${BOLD}Scheduled Hello jobs:${RESET}"
-  if (((crontab -l 2>/dev/null || true) || true) || true) | grep -q "# session-planner"; then
-    (((crontab -l 2>/dev/null || true) || true) || true) | grep "# session-planner"
-  else
-    echo -e "  ${YELLOW}No session-planner jobs found.${RESET}"
+  echo -e "${BOLD}Scheduled Claude sessions:${RESET}"
+  echo ""
+
+  # Get all session-planner cron entries
+  CRON_ENTRIES=$((((crontab -l 2>/dev/null || true) || true) || true) | grep "# session-planner" || true)
+
+  if [[ -z "$CRON_ENTRIES" ]]; then
+    echo -e "  ${YELLOW}No Claude sessions scheduled.${RESET}"
+    echo -e ""
+    echo -e "  ${BOLD}Tip:${RESET} Run ${GREEN}/hello <time>${RESET} to schedule a session."
+    exit 0
   fi
+
+  # Parse and display each job with remaining time
+  while IFS= read -r line; do
+    # Skip empty lines
+    [[ -z "$line" ]] && continue
+
+    # Parse the comment line: "# session-planner: session at <sched> → greeting at <target> (offset: <offset>h)"
+    if [[ "$line" =~ "# session-planner: session at " ]]; then
+      # Extract parts using string manipulation
+      TEMP="${line/\# session-planner: session at /}"
+      SCHED_TIME="${TEMP%% → greeting at*}"
+      TEMP="${TEMP##* → greeting at }"
+      TARGET_TIME="${TEMP%% \(offset*}"
+      OFFSET_INFO="${TEMP#*\(offset: }"
+      OFFSET_INFO="${OFFSET_INFO%)}"
+
+      # Parse the scheduled time to get hour and minute
+      SCHED_PRETTY="$SCHED_TIME"
+      if [[ "$SCHED_PRETTY" =~ ([0-9]+):([0-9]+)\ ([ap]m) ]]; then
+        SCHED_H="${BASH_REMATCH[1]}"
+        SCHED_M="${BASH_REMATCH[2]}"
+        SCHED_AP="${BASH_REMATCH[3]}"
+
+        # Convert to 24-hour format
+        if [[ "$SCHED_AP" == "pm" ]] && [[ $SCHED_H -ne 12 ]]; then
+          SCHED_H=$(( SCHED_H + 12 ))
+        elif [[ "$SCHED_AP" == "am" ]] && [[ $SCHED_H -eq 12 ]]; then
+          SCHED_H=0
+        fi
+
+        # Calculate remaining time
+        LOOP_SECS=$(seconds_until "$SCHED_H" "$SCHED_M")
+        REMAINING=$(format_duration $LOOP_SECS)
+
+        # Display the job
+        echo -e "  ${GREEN}•${RESET} ${BOLD}${TARGET_TIME}${RESET} (session starts at ${SCHED_PRETTY})"
+        echo -e "    ${YELLOW}Time remaining: ${REMAINING}${RESET}"
+        echo -e "    Offset: ${OFFSET_INFO}"
+        echo ""
+      fi
+    fi
+  done <<< "$CRON_ENTRIES"
+
   exit 0
 fi
 
@@ -189,7 +247,7 @@ if $REMOVE_ALL; then
     | grep -v "session-planner" \
     > "$tmp" || true
   cat "$tmp" | crontab -; rm -f "$tmp"
-  echo -e "${GREEN}✓${RESET} All session-planner jobs removed."
+  echo -e "${GREEN}✓${RESET} All scheduled Claude sessions removed."
   exit 0
 fi
 
@@ -201,10 +259,10 @@ if [[ -n "$REMOVE_TIME" ]]; then
   tmp=$(mktemp)
   ((crontab -l 2>/dev/null || true) || true) \
     | grep -v "# session-planner.*${TARGET_PRETTY}" \
-    | grep -v "Hello! It is now ${TARGET_PRETTY}" \
+    | grep -v "Hello! It is now.*${TARGET_PRETTY}" \
     > "$tmp" || true
   cat "$tmp" | crontab -; rm -f "$tmp"
-  echo -e "${GREEN}✓${RESET} Removed session-planner job for ${BOLD}${TARGET_PRETTY}${RESET}."
+  echo -e "${GREEN}✓${RESET} Removed Claude session for ${BOLD}${TARGET_PRETTY}${RESET}."
   exit 0
 fi
 
@@ -219,8 +277,10 @@ fi
 mkdir -p "$HOME/.claude"
 LOG="$HOME/.claude/session-planner.log"
 
-# ── find claude path for cron ──────────────────────────────────────────────────
+# ── find tool paths for cron ──────────────────────────────────────────────────
 CLAUDE_PATH=$(which claude 2>/dev/null || echo "claude")
+UNAME_PATH=$(which uname 2>/dev/null || echo "uname")
+OS_NAME=$("$UNAME_PATH")
 
 # ── load crontab, strip existing session-planner entries ─────────────────────
 
@@ -252,11 +312,33 @@ for T in "${TIMES[@]}"; do
   TARGET_PRETTY=$(pretty_time "$TARGET_H" "$TARGET_M")
   SCHED_PRETTY=$(pretty_time "$SCHED_H" "$SCHED_M")
 
-  # cron job: claude --print fires at session-open time + notification
-  MSG="Hello! It is now ${TARGET_PRETTY}. This is your scheduled greeting."
+  # cron job: start Claude session at session-open time + notification
+  MSG="Hello! It is now ${SCHED_PRETTY}. Session will greet you at ${TARGET_PRETTY}."
   CRON_EXPR="${SCHED_M} ${SCHED_H} * * *"
-  # We use a subshell for the notification to handle the environment/osascript better
-  CRON_LINE="${CRON_EXPR} ${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; if [ \"\$(uname)\" = \"Darwin\" ]; then osascript -e \"display notification \\\"${MSG}\\\" with title \\\"Session Planner\\\"\"; elif command -v notify-send >/dev/null; then notify-send \"Session Planner\" \"${MSG}\"; fi"
+
+  # Build the Claude session startup command
+  CLAude_START_CMD=""
+  if [[ "$OS_NAME" == "Darwin" ]]; then
+    # macOS: Open Terminal with Claude running
+    CLAude_START_CMD="/usr/bin/osascript -e 'tell application \"Terminal\" to do script \"${CLAUDE_PATH}\"'"
+  elif command -v gnome-terminal >/dev/null; then
+    # Linux: Open gnome-terminal with Claude
+    CLAude_START_CMD="gnome-terminal -- ${CLAUDE_PATH}"
+  elif command -v xterm >/dev/null; then
+    # Linux fallback: xterm with Claude
+    CLAude_START_CMD="xterm -e ${CLAUDE_PATH}"
+  fi
+
+  # Build the notification part
+  NOTIF_CMD=""
+  if [[ "$OS_NAME" == "Darwin" ]]; then
+    NOTIF_CMD="/usr/bin/osascript -e \"display notification \\\"${MSG}\\\" with title \\\"Session Planner\\\"\"; /usr/bin/afplay /System/Library/Sounds/Glass.aiff"
+  elif command -v notify-send >/dev/null; then
+    NOTIF_CMD="/usr/bin/notify-send \"Session Planner\" \"${MSG}\""
+  fi
+
+  # Combined command: Start Claude + notification
+  CRON_LINE="${CRON_EXPR} ( ${CLAude_START_CMD} >> ${LOG} 2>&1; ${NOTIF_CMD} >> ${LOG} 2>&1 )"
 
   {
     echo "# session-planner: session at ${SCHED_PRETTY} → greeting at ${TARGET_PRETTY} (offset: ${OFFSET_HOURS}h)"
@@ -272,11 +354,12 @@ for T in "${TIMES[@]}"; do
     SOONEST_SESSION="$SCHED_PRETTY"
   fi
 
-  # Success message for user
-  echo -e "${GREEN}✓${RESET} Scheduled Claude session to start at ${BOLD}${SCHED_PRETTY}${RESET} (greeting at ${TARGET_PRETTY})"
+  # Success message for user with remaining time
+  REMAINING=$(format_duration $LOOP_SECS)
+  echo -e "${GREEN}✓${RESET} Scheduled Claude session to start at ${BOLD}${SCHED_PRETTY}${RESET} (target: ${TARGET_PRETTY}) - ${YELLOW}Time remaining: ${REMAINING}${RESET}"
 
   # Structured output for Claude to parse
-  echo "SCHEDULED: {\"target\":\"${TARGET_PRETTY}\",\"session_at\":\"${SCHED_PRETTY}\",\"cron\":\"${CRON_EXPR}\",\"loop_in_seconds\":${LOOP_SECS},\"offset_hours\":${OFFSET_HOURS}}"
+  # echo "SCHEDULED: {\"target\":\"${TARGET_PRETTY}\",\"session_at\":\"${SCHED_PRETTY}\",\"cron\":\"${CRON_EXPR}\",\"loop_in_seconds\":${LOOP_SECS},\"offset_hours\":${OFFSET_HOURS}}"
 
   $FIRST || JOBS_JSON+=","
   JOBS_JSON+="{\"target\":\"${TARGET_PRETTY}\",\"session_at\":\"${SCHED_PRETTY}\",\"loop_in_seconds\":${LOOP_SECS}}"
@@ -290,4 +373,4 @@ cat "$tmp" | crontab -
 rm -f "$tmp"
 
 # Summary for Claude's confirmation message
-echo "SUMMARY: {\"count\":${#TIMES[@]},\"offset_hours\":${OFFSET_HOURS},\"soonest_session_in_seconds\":${SOONEST_SECS},\"soonest_target\":\"${SOONEST_TARGET}\",\"soonest_session\":\"${SOONEST_SESSION}\",\"log\":\"${LOG}\",\"jobs\":${JOBS_JSON}}"
+# echo "SUMMARY: {\"count\":${#TIMES[@]},\"offset_hours\":${OFFSET_HOURS},\"soonest_session_in_seconds\":${SOONEST_SECS},\"soonest_target\":\"${SOONEST_TARGET}\",\"soonest_session\":\"${SOONEST_SESSION}\",\"log\":\"${LOG}\",\"jobs\":${JOBS_JSON}}"

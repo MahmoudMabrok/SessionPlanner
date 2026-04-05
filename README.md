@@ -125,7 +125,7 @@ scripts/hello-scheduler.sh   (bash)
 To ensure `session-planner` can schedule jobs and show notifications without prompting every time, grant your terminal (Terminal or iTerm) the following:
 
 1. **Full Disk Access**: Go to `System Settings > Privacy & Security > Full Disk Access` and add your terminal. This is required for `crontab` to save your schedule.
-2. **Notifications**: Go to `System Settings > Notifications > Script Editor` and ensure "Allow Notifications" is on.
+2. **Notifications & Sound**: The tool uses `osascript` for visuals, `afplay` for a sound alert, and `say` for a voice greeting to ensure you don't miss your session start! Ensure your volume is up.
 
 
 Logs: `~/.claude/session-planner.log`
