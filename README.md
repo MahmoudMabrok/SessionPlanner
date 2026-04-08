@@ -110,13 +110,46 @@ scripts/hello-scheduler.sh   (bash)
 
 ## Requirements
 
-| | Notes |
-|---|---|
-| **Node.js** ≥ 14 | For npx / global install |
-| **Claude Code** | `claude` in PATH — [install](https://code.claude.com) |
-| **cron** | Built-in on macOS; Linux: `sudo apt install cron` |
-| **Bash** 4+ | macOS: `brew install bash` |
-| **OS Support** | macOS and Linux (terminal use) |
+| Tool | Required for | Notes |
+|---|---|---|
+| **Node.js ≥ 14** | `npx` / global install | [nodejs.org](https://nodejs.org) |
+| **Claude Code** | Scheduling sessions | `claude` must be in PATH — [install](https://code.claude.com) |
+| **Bash 4+** | Running the script | Pre-installed on Linux; see below for macOS/Windows |
+| **cron** | Persistent scheduling | Built-in on macOS & Linux; **not available on Windows** |
+
+### macOS
+
+Everything is pre-installed
+
+### Linux
+
+Install `cron` if it's not already running:
+
+```bash
+# Debian / Ubuntu
+sudo apt install cron
+sudo systemctl enable --now cron
+
+# Fedora / RHEL
+sudo dnf install cronie
+sudo systemctl enable --now crond
+```
+
+For desktop notifications, install `libnotify`:
+
+```bash
+sudo apt install libnotify-bin    # Debian / Ubuntu
+sudo dnf install libnotify        # Fedora
+```
+
+### Windows
+
+> [!WARNING]
+> `cron` is **not available** on native Windows. Session scheduling will not work in Git Bash or PowerShell.
+
+Use one of these alternatives:
+- **WSL (recommended):** Install WSL 2 with Ubuntu, then use `session-planner` inside WSL — cron works normally there.
+- **Task Scheduler:** For advanced users, you can create a Task Scheduler entry manually to run `claude --print` at your chosen time.
 
 ---
 

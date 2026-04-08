@@ -180,6 +180,10 @@ done
 # ── --list ────────────────────────────────────────────────────────────────────
 
 if $LIST_MODE; then
+  if ! $HAS_CRONTAB; then
+    echo -e "  ${YELLOW}crontab is not available on this system (Windows?). Scheduling is not supported.${RESET}"
+    exit 0
+  fi
   echo -e "${BOLD}Scheduled Claude sessions:${RESET}"
   echo ""
 
@@ -241,6 +245,10 @@ fi
 # ── --remove-all ──────────────────────────────────────────────────────────────
 
 if $REMOVE_ALL; then
+  if ! $HAS_CRONTAB; then
+    echo -e "${YELLOW}crontab not available — nothing to remove.${RESET}"
+    exit 0
+  fi
   tmp=$(mktemp)
   ((crontab -l 2>/dev/null || true) || true) \
     | grep -v "# session-planner" \
@@ -254,6 +262,10 @@ fi
 # ── --remove <time> ───────────────────────────────────────────────────────────
 
 if [[ -n "$REMOVE_TIME" ]]; then
+  if ! $HAS_CRONTAB; then
+    echo -e "${YELLOW}crontab not available — nothing to remove.${RESET}"
+    exit 0
+  fi
   parse_time "$REMOVE_TIME"
   TARGET_PRETTY=$(pretty_time "$PARSED_HOUR" "$PARSED_MIN")
   tmp=$(mktemp)
@@ -283,7 +295,20 @@ UNAME_PATH=$(which uname 2>/dev/null || echo "uname")
 OS_NAME=$("$UNAME_PATH")
 USER_SHELL="${SHELL:-/bin/bash}"
 
+# crontab is not available on Windows/Git Bash — detect once and guard all calls
+if command -v crontab >/dev/null 2>&1; then
+  HAS_CRONTAB=true
+else
+  HAS_CRONTAB=false
+fi
+
 # ── load crontab, strip existing session-planner entries ─────────────────────
+
+if ! $HAS_CRONTAB; then
+  echo -e "${YELLOW}WARNING: crontab is not available on this system.${RESET}"
+  echo -e "${YELLOW}Session scheduling requires cron (Linux/macOS). On Windows, use WSL or Task Scheduler.${RESET}"
+  exit 1
+fi
 
 tmp=$(mktemp)
 ((crontab -l 2>/dev/null || true) || true) \
@@ -318,19 +343,39 @@ for T in "${TIMES[@]}"; do
   CRON_EXPR="${SCHED_M} ${SCHED_H} * * *"
 
   # On macOS: open a Terminal window so claude inherits the full user env
-  # (sessions appear in Claude conversation history, correct auth is used)
-  # On Linux: fall back to shell -lc
+  # On Linux: open a new terminal window (same idea — full user env, sessions appear in history)
+  # Windows/WSL: opens a new cmd/wt window
   if [[ "$OS_NAME" == "Darwin" ]]; then
     TERMINAL_CMD="${CLAUDE_PATH} --print ${MSG}"
     LAUNCH_CMD="/usr/bin/osascript -e 'tell application \"Terminal\" to do script \"${TERMINAL_CMD}\"'"
     NOTIF_CMD="/usr/bin/osascript -e 'display notification \"${MSG}\" with title \"Session Planner\"'; /usr/bin/afplay /System/Library/Sounds/Glass.aiff"
     CRON_LINE="${CRON_EXPR} ${LAUNCH_CMD}; ${NOTIF_CMD}"
   else
+    # Detect available terminal emulator on Linux/WSL
+    TERM_LAUNCH=""
+    if command -v gnome-terminal >/dev/null 2>&1; then
+      TERM_LAUNCH="gnome-terminal -- ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\"; exec ${USER_SHELL}'"
+    elif command -v konsole >/dev/null 2>&1; then
+      TERM_LAUNCH="konsole -e ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\"; exec ${USER_SHELL}'"
+    elif command -v xfce4-terminal >/dev/null 2>&1; then
+      TERM_LAUNCH="xfce4-terminal -e \"${USER_SHELL} -lc '${CLAUDE_PATH} --print \\\"${MSG}\\\"; exec ${USER_SHELL}'\""
+    elif command -v xterm >/dev/null 2>&1; then
+      TERM_LAUNCH="xterm -e '${CLAUDE_PATH} --print \"${MSG}\"; exec ${USER_SHELL}'"
+    fi
+
+    # Notification
     NOTIF_CMD=""
-    if command -v notify-send >/dev/null; then
+    if command -v notify-send >/dev/null 2>&1; then
       NOTIF_CMD="notify-send \"Session Planner\" \"${MSG}\""
     fi
-    CRON_LINE="${CRON_EXPR} ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; ${NOTIF_CMD} >> ${LOG} 2>&1'"
+
+    if [[ -n "$TERM_LAUNCH" ]]; then
+      # Open new terminal window (same as macOS behaviour)
+      CRON_LINE="${CRON_EXPR} ${TERM_LAUNCH}; ${NOTIF_CMD}"
+    else
+      # Headless fallback (no display / server)
+      CRON_LINE="${CRON_EXPR} ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; ${NOTIF_CMD}'"
+    fi
   fi
 
   {
