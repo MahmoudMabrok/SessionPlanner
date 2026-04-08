@@ -318,19 +318,39 @@ for T in "${TIMES[@]}"; do
   CRON_EXPR="${SCHED_M} ${SCHED_H} * * *"
 
   # On macOS: open a Terminal window so claude inherits the full user env
-  # (sessions appear in Claude conversation history, correct auth is used)
-  # On Linux: fall back to shell -lc
+  # On Linux: open a new terminal window (same idea — full user env, sessions appear in history)
+  # Windows/WSL: opens a new cmd/wt window
   if [[ "$OS_NAME" == "Darwin" ]]; then
     TERMINAL_CMD="${CLAUDE_PATH} --print ${MSG}"
     LAUNCH_CMD="/usr/bin/osascript -e 'tell application \"Terminal\" to do script \"${TERMINAL_CMD}\"'"
     NOTIF_CMD="/usr/bin/osascript -e 'display notification \"${MSG}\" with title \"Session Planner\"'; /usr/bin/afplay /System/Library/Sounds/Glass.aiff"
     CRON_LINE="${CRON_EXPR} ${LAUNCH_CMD}; ${NOTIF_CMD}"
   else
+    # Detect available terminal emulator on Linux/WSL
+    TERM_LAUNCH=""
+    if command -v gnome-terminal >/dev/null 2>&1; then
+      TERM_LAUNCH="gnome-terminal -- ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\"; exec ${USER_SHELL}'"
+    elif command -v konsole >/dev/null 2>&1; then
+      TERM_LAUNCH="konsole -e ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\"; exec ${USER_SHELL}'"
+    elif command -v xfce4-terminal >/dev/null 2>&1; then
+      TERM_LAUNCH="xfce4-terminal -e \"${USER_SHELL} -lc '${CLAUDE_PATH} --print \\\"${MSG}\\\"; exec ${USER_SHELL}'\""
+    elif command -v xterm >/dev/null 2>&1; then
+      TERM_LAUNCH="xterm -e '${CLAUDE_PATH} --print \"${MSG}\"; exec ${USER_SHELL}'"
+    fi
+
+    # Notification
     NOTIF_CMD=""
-    if command -v notify-send >/dev/null; then
+    if command -v notify-send >/dev/null 2>&1; then
       NOTIF_CMD="notify-send \"Session Planner\" \"${MSG}\""
     fi
-    CRON_LINE="${CRON_EXPR} ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; ${NOTIF_CMD} >> ${LOG} 2>&1'"
+
+    if [[ -n "$TERM_LAUNCH" ]]; then
+      # Open new terminal window (same as macOS behaviour)
+      CRON_LINE="${CRON_EXPR} ${TERM_LAUNCH}; ${NOTIF_CMD}"
+    else
+      # Headless fallback (no display / server)
+      CRON_LINE="${CRON_EXPR} ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; ${NOTIF_CMD}'"
+    fi
   fi
 
   {

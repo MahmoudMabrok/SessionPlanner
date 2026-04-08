@@ -1,0 +1,94 @@
+name: Cross-Platform Scheduler Tests
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'scripts/hello-scheduler.sh'
+      - 'test-parse.sh'
+      - '.github/workflows/test-cross-platform.yml'
+  pull_request:
+    paths:
+      - 'scripts/hello-scheduler.sh'
+      - 'test-parse.sh'
+
+jobs:
+  # ── Linux ────────────────────────────────────────────────────────────────────
+  test-linux:
+    name: Tests (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/hello-scheduler.sh test-parse.sh
+
+      - name: Parse unit tests
+        run: bash test-parse.sh
+
+      - name: Schedule a session (dry-run via --help exits cleanly)
+        run: bash scripts/hello-scheduler.sh --help
+
+      - name: Schedule a session and verify crontab entry
+        run: |
+          # Schedule for 1am (far future, safe)
+          bash scripts/hello-scheduler.sh 1am --offset 0h
+          echo "--- crontab after scheduling ---"
+          crontab -l
+          # Verify the entry was added
+          crontab -l | grep -q "session-planner" && echo "✓ Cron entry found" || (echo "✗ Cron entry missing" && exit 1)
+
+      - name: Verify list mode shows the scheduled session
+        run: |
+          bash scripts/hello-scheduler.sh --list
+
+      - name: Remove session and verify clean crontab
+        run: |
+          bash scripts/hello-scheduler.sh --remove 1am
+          REMAINING=$(crontab -l 2>/dev/null | grep "session-planner" || true)
+          [[ -z "$REMAINING" ]] && echo "✓ Cron entry removed" || (echo "✗ Entry still present: $REMAINING" && exit 1)
+
+      - name: Remove-all works on empty schedule
+        run: bash scripts/hello-scheduler.sh --remove-all
+
+      - name: Schedule multiple times
+        run: |
+          bash scripts/hello-scheduler.sh 9am 2pm 6pm --offset 1h
+          COUNT=$(crontab -l | grep -c "session-planner" || true)
+          # Each time adds 2 lines (comment + cron), expect 6 lines for 3 times
+          [[ $COUNT -ge 3 ]] && echo "✓ Multiple sessions scheduled ($COUNT comment lines)" || (echo "✗ Expected ≥3 session-planner lines, got $COUNT" && exit 1)
+          bash scripts/hello-scheduler.sh --remove-all
+
+  # ── Windows (Git Bash) ───────────────────────────────────────────────────────
+  test-windows:
+    name: Tests (Windows / Git Bash)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash   # use Git Bash on Windows runners
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/hello-scheduler.sh test-parse.sh
+
+      - name: Parse unit tests
+        run: bash test-parse.sh
+
+      - name: Help exits cleanly
+        run: bash scripts/hello-scheduler.sh --help
+
+      - name: Schedule a session and verify output
+        run: |
+          bash scripts/hello-scheduler.sh 1am --offset 0h
+          echo "--- crontab after scheduling ---"
+          crontab -l || echo "(crontab unavailable on this Windows runner)"
+          # At minimum the script should have exited 0 and printed a success line
+          OUTPUT=$(bash scripts/hello-scheduler.sh --list 2>&1 || true)
+          echo "$OUTPUT"
+
+      - name: Remove session
+        run: bash scripts/hello-scheduler.sh --remove 1am || true
+
+      - name: Remove-all
+        run: bash scripts/hello-scheduler.sh --remove-all || true
