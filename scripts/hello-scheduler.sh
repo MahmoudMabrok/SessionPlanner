@@ -180,6 +180,10 @@ done
 # ── --list ────────────────────────────────────────────────────────────────────
 
 if $LIST_MODE; then
+  if ! $HAS_CRONTAB; then
+    echo -e "  ${YELLOW}crontab is not available on this system (Windows?). Scheduling is not supported.${RESET}"
+    exit 0
+  fi
   echo -e "${BOLD}Scheduled Claude sessions:${RESET}"
   echo ""
 
@@ -241,6 +245,10 @@ fi
 # ── --remove-all ──────────────────────────────────────────────────────────────
 
 if $REMOVE_ALL; then
+  if ! $HAS_CRONTAB; then
+    echo -e "${YELLOW}crontab not available — nothing to remove.${RESET}"
+    exit 0
+  fi
   tmp=$(mktemp)
   ((crontab -l 2>/dev/null || true) || true) \
     | grep -v "# session-planner" \
@@ -254,6 +262,10 @@ fi
 # ── --remove <time> ───────────────────────────────────────────────────────────
 
 if [[ -n "$REMOVE_TIME" ]]; then
+  if ! $HAS_CRONTAB; then
+    echo -e "${YELLOW}crontab not available — nothing to remove.${RESET}"
+    exit 0
+  fi
   parse_time "$REMOVE_TIME"
   TARGET_PRETTY=$(pretty_time "$PARSED_HOUR" "$PARSED_MIN")
   tmp=$(mktemp)
@@ -283,7 +295,20 @@ UNAME_PATH=$(which uname 2>/dev/null || echo "uname")
 OS_NAME=$("$UNAME_PATH")
 USER_SHELL="${SHELL:-/bin/bash}"
 
+# crontab is not available on Windows/Git Bash — detect once and guard all calls
+if command -v crontab >/dev/null 2>&1; then
+  HAS_CRONTAB=true
+else
+  HAS_CRONTAB=false
+fi
+
 # ── load crontab, strip existing session-planner entries ─────────────────────
+
+if ! $HAS_CRONTAB; then
+  echo -e "${YELLOW}WARNING: crontab is not available on this system.${RESET}"
+  echo -e "${YELLOW}Session scheduling requires cron (Linux/macOS). On Windows, use WSL or Task Scheduler.${RESET}"
+  exit 1
+fi
 
 tmp=$(mktemp)
 ((crontab -l 2>/dev/null || true) || true) \
