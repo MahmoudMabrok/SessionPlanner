@@ -317,16 +317,21 @@ for T in "${TIMES[@]}"; do
   MSG="Hello! It is now ${SCHED_PRETTY}. Session will greet you at ${TARGET_PRETTY}."
   CRON_EXPR="${SCHED_M} ${SCHED_H} * * *"
 
-  # Build the notification part
-  NOTIF_CMD=""
+  # On macOS: open a Terminal window so claude inherits the full user env
+  # (sessions appear in Claude conversation history, correct auth is used)
+  # On Linux: fall back to shell -lc
   if [[ "$OS_NAME" == "Darwin" ]]; then
-    NOTIF_CMD="/usr/bin/osascript -e \"display notification \\\"${MSG}\\\" with title \\\"Session Planner\\\"\"; /usr/bin/afplay /System/Library/Sounds/Glass.aiff"
-  elif command -v notify-send >/dev/null; then
-    NOTIF_CMD="/usr/bin/notify-send \"Session Planner\" \"${MSG}\""
+    TERMINAL_CMD="${CLAUDE_PATH} --print ${MSG}"
+    LAUNCH_CMD="/usr/bin/osascript -e 'tell application \"Terminal\" to do script \"${TERMINAL_CMD}\"'"
+    NOTIF_CMD="/usr/bin/osascript -e 'display notification \"${MSG}\" with title \"Session Planner\"'; /usr/bin/afplay /System/Library/Sounds/Glass.aiff"
+    CRON_LINE="${CRON_EXPR} ${LAUNCH_CMD}; ${NOTIF_CMD}"
+  else
+    NOTIF_CMD=""
+    if command -v notify-send >/dev/null; then
+      NOTIF_CMD="notify-send \"Session Planner\" \"${MSG}\""
+    fi
+    CRON_LINE="${CRON_EXPR} ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; ${NOTIF_CMD} >> ${LOG} 2>&1'"
   fi
-
-  # Combined command: Print via Claude + notification
-  CRON_LINE="${CRON_EXPR} ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; ${NOTIF_CMD} >> ${LOG} 2>&1'"
 
   {
     echo "# session-planner: session at ${SCHED_PRETTY} → greeting at ${TARGET_PRETTY} (offset: ${OFFSET_HOURS}h)"
