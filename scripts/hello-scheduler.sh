@@ -281,6 +281,7 @@ LOG="$HOME/.claude/session-planner.log"
 CLAUDE_PATH=$(which claude 2>/dev/null || echo "claude")
 UNAME_PATH=$(which uname 2>/dev/null || echo "uname")
 OS_NAME=$("$UNAME_PATH")
+USER_SHELL="${SHELL:-/bin/bash}"
 
 # ── load crontab, strip existing session-planner entries ─────────────────────
 
@@ -312,22 +313,9 @@ for T in "${TIMES[@]}"; do
   TARGET_PRETTY=$(pretty_time "$TARGET_H" "$TARGET_M")
   SCHED_PRETTY=$(pretty_time "$SCHED_H" "$SCHED_M")
 
-  # cron job: start Claude session at session-open time + notification
+  # cron job: claude --print fires at session-open time + notification
   MSG="Hello! It is now ${SCHED_PRETTY}. Session will greet you at ${TARGET_PRETTY}."
   CRON_EXPR="${SCHED_M} ${SCHED_H} * * *"
-
-  # Build the Claude session startup command
-  CLAude_START_CMD=""
-  if [[ "$OS_NAME" == "Darwin" ]]; then
-    # macOS: Open Terminal with Claude running
-    CLAude_START_CMD="/usr/bin/osascript -e 'tell application \"Terminal\" to do script \"${CLAUDE_PATH}\"'"
-  elif command -v gnome-terminal >/dev/null; then
-    # Linux: Open gnome-terminal with Claude
-    CLAude_START_CMD="gnome-terminal -- ${CLAUDE_PATH}"
-  elif command -v xterm >/dev/null; then
-    # Linux fallback: xterm with Claude
-    CLAude_START_CMD="xterm -e ${CLAUDE_PATH}"
-  fi
 
   # Build the notification part
   NOTIF_CMD=""
@@ -337,8 +325,8 @@ for T in "${TIMES[@]}"; do
     NOTIF_CMD="/usr/bin/notify-send \"Session Planner\" \"${MSG}\""
   fi
 
-  # Combined command: Start Claude + notification
-  CRON_LINE="${CRON_EXPR} ( ${CLAude_START_CMD} >> ${LOG} 2>&1; ${NOTIF_CMD} >> ${LOG} 2>&1 )"
+  # Combined command: Print via Claude + notification
+  CRON_LINE="${CRON_EXPR} ${USER_SHELL} -lc '${CLAUDE_PATH} --print \"${MSG}\" >> ${LOG} 2>&1; ${NOTIF_CMD} >> ${LOG} 2>&1'"
 
   {
     echo "# session-planner: session at ${SCHED_PRETTY} → greeting at ${TARGET_PRETTY} (offset: ${OFFSET_HOURS}h)"

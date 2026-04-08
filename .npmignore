@@ -1,0 +1,10 @@
+# Version control
+.github/
+
+# Development and testing
+test-parse.sh
+test_cron
+
+# Editor / System
+.DS_Store
+*.swp
